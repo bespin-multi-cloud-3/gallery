@@ -10,11 +10,11 @@ terraform {
 
   backend "s3" {
     bucket       = "tf-core-tfstate"
-    key          = "10.02/lab01/infra/terraform.tfstate"
+    key          = "gallery/oidc/terraform.tfstate"
     region       = "ap-northeast-2"
     encrypt      = true
     use_lockfile = true
-  }
+  }  
 }
 
 provider "aws" {
