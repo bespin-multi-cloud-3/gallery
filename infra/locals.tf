@@ -3,5 +3,5 @@ locals {
   project   = "gallery"
   namespace = "${local.org}-${local.project}"
 
-  message = "Gallery Project Set-up from ${local.namespace}"
+  message = "Gallery Project Set-up #2 from ${local.namespace}"
 }
