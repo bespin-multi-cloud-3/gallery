@@ -5,16 +5,23 @@ on:
     branches: [main]
     paths: ["infra/*.tf"]
 
+permissions:
+  contents: read
+  id-token: write
+  
 env:
   TF_VERSION: "1.14.7"
+  AWS_REGION: "ap-northeast-2"
   WORKING_DIR: "infra"
 
 jobs:
   apply:
     runs-on: ubuntu-latest
+  
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
+  
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,8 +31,14 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_IAMROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
       - name: Terraform Init
         run: terraform init
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -input=false -auto-approve

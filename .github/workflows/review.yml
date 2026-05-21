@@ -6,16 +6,24 @@ on:
     types: [opened, synchronize]
     paths: ["infra/*.tf"]
 
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
 env:
   TF_VERSION: "1.14.7"
+  AWS_REGION: "ap-northeast-2"
   WORKING_DIR: "infra"
 
 jobs:
   plan:
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,12 +33,18 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_IAMROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
       - name: Terraform Init
         run: terraform init
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan
+        run: terraform plan -input=false 
 
       - name: Fail if plan Failed
         if: steps.plan.outcome == 'failure'
