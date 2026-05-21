@@ -2,7 +2,7 @@ locals {
   org     = "tf-core"
   project = "gallery"
 
-  namespace = "${local.org}-${project}"
+  namespace = "${local.org}-${local.project}"
 
   vpc_id = data.aws_vpc.default.id
 
