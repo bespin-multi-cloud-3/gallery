@@ -1,4 +1,4 @@
-name: gallery deploy
+name: Deploy
 
 on:
   push:
