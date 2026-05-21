@@ -1,4 +1,4 @@
-name: 10.01.lab01 deploy
+name: gallery deploy
 
 on:
   push:
