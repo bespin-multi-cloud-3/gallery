@@ -3,7 +3,7 @@ name: Deploy
 on:
   push:
     branches: [main]
-    paths: ["infra/*.tf"]
+    paths: ["infra/*.tf", "infra/*.tfvars", "infra/*.hcl"]
 
 permissions:
   contents: read

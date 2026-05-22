@@ -10,7 +10,7 @@ terraform {
 
   backend "s3" {
     bucket       = "tf-core-tfstate"
-    key          = "gallery/oidc/terraform.tfstate"
+    key          = "oidc/terraform.tfstate"
     region       = "ap-northeast-2"
     encrypt      = true
     use_lockfile = true
