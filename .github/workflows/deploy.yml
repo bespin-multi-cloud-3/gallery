@@ -1,4 +1,4 @@
-name: Deploy
+name: gallery deploy
 
 on:
   push:
@@ -8,20 +8,30 @@ on:
 permissions:
   contents: read
   id-token: write
-  
+
+concurrency:
+  group: bespin-multi-cloud-3-deploy
+  cancel-in-progress: false
+
 env:
   TF_VERSION: "1.14.7"
   AWS_REGION: "ap-northeast-2"
   WORKING_DIR: "infra"
 
 jobs:
-  apply:
+  apply-dev:
     runs-on: ubuntu-latest
-  
+
+    environment: dev
+    
+    concurrency:
+      group: gallery-dev
+      cancel-in-progress: false
+
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
-  
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,4 +51,40 @@ jobs:
         run: terraform init -backend-config="env.dev.backend.hcl"
 
       - name: Terraform Apply
-        run: terraform apply -input=false -var-file="env.dev.tfvars" -auto-approve
+        id: apply
+        run: terraform apply -input=false -auto-approve -var-file="env.dev.tfvars"
+
+  apply-prod:
+    runs-on: ubuntu-latest
+
+    environment: prod
+    
+    concurrency:
+      group: gallery-prod
+      cancel-in-progress: false
+
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_IAMROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        run: terraform init -backend-config="env.prod.backend.hcl"
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -input=false -auto-approve -var-file="env.prod.tfvars"
