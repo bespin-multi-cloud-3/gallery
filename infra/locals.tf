@@ -1,29 +1,25 @@
 locals {
-  org     = "tf-core"
-  project = "gallery"
+  org         = "tf-core"
+  project     = "gallery"
+  environment = var.env
 
-  namespace = "${local.org}-${local.project}"
+  namespace = "${local.org}-${local.project}-${local.environment}"
 
-  vpc_id = data.aws_vpc.default.id
-
-  instance = {
-    name = "web"
-
-    ami                         = data.aws_ami.amazon_linux.id
-    instance_type               = "t3.micro"
-    associate_public_ip_address = true
-    subnet_id                   = data.aws_subnets.default.ids[0]
-
-    allow_access = {
-      port        = 80
-      cidr_blocks = ["0.0.0.0/0"]
+  infra = {
+    lb = {
+      listener_port = var.infra_lb_listener_port
     }
-  }
 
-  iamrole = {
-    name = "instance"
+    lt = {
+      service_port  = var.infra_lt_service_port
+      instance_type = var.infra_lt_instance_type
+    }
 
-    assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
-    policy_arn         = data.aws_iam_policy.aws_ssm_core.arn
+    asg = {
+      max_size         = var.infra_asg_max_size
+      min_size         = var.infra_asg_min_size
+      desired_capacity = var.infra_asg_desired_capacity
+      deploy_version   = var.infra_asg_deploy_version
+    }
   }
 }

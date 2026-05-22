@@ -1,61 +1,35 @@
-resource "aws_iam_role" "this" {
-  name               = "${local.namespace}-iamrole-${local.iamrole.name}"
-  assume_role_policy = local.iamrole.assume_role_policy
+module "network" {
+  source = "./modules/network"
 
-  tags = {
-    Name = "${local.namespace}-iamrole-${local.iamrole.name}"
-  }
+  namespace = local.namespace
 }
 
-resource "aws_iam_role_policy_attachment" "this" {
-  role       = aws_iam_role.this.name
-  policy_arn = local.iamrole.policy_arn
+module "platform" {
+  source = "./modules/platform"
+
+  namespace = local.namespace
+  vpc_id    = module.network.vpc["main"].id
+
+  lb_subnets           = [module.network.subnet["public-a"].id, module.network.subnet["public-b"].id]
+  lb_listener_port     = local.infra.lb.listener_port
+  lb_target_group_port = local.infra.lt.service_port
 }
 
-resource "aws_iam_instance_profile" "this" {
-  name = "${local.namespace}-iamprofile-${local.iamrole.name}"
-  role = aws_iam_role.this.name
+module "workload" {
+  source = "./modules/workload"
 
-  tags = {
-    Name = "${local.namespace}-iamprofile-${local.iamrole.name}"
-  }
-}
+  namespace = local.namespace
+  vpc_id    = module.network.vpc["main"].id
 
-resource "aws_security_group" "this" {
-  name   = "${local.namespace}-sg-${local.instance.name}"
-  vpc_id = local.vpc_id
+  asg_vpc_zone_identifier = [module.network.subnet["private-a"].id, module.network.subnet["private-b"].id]
+  asg_target_group_arns   = [module.platform.lb["main"].target_group.arn]
+  asg_deploy_version      = local.infra.asg.deploy_version
+  asg_max_size            = local.infra.asg.max_size
+  asg_min_size            = local.infra.asg.min_size
+  asg_desired_capacity    = local.infra.asg.desired_capacity
 
-  ingress {
-    from_port   = local.instance.allow_access.port
-    to_port     = local.instance.allow_access.port
-    protocol    = "tcp"
-    cidr_blocks = local.instance.allow_access.cidr_blocks
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${local.namespace}-sg-${local.instance.name}"
-  }
-}
-
-resource "aws_instance" "this" {
-  ami                         = local.instance.ami
-  instance_type               = local.instance.instance_type
-  associate_public_ip_address = local.instance.associate_public_ip_address
-  subnet_id                   = local.instance.subnet_id
-
-  vpc_security_group_ids = [aws_security_group.this.id]
-  iam_instance_profile   = aws_iam_instance_profile.this.name
-
-  depends_on = [aws_iam_role_policy_attachment.this]
-
-  tags = {
-    Name = "${local.namespace}-instance-${local.instance.name}"
-  }
+  lt_iam_instance_profile_name = module.platform.iamprofile["instance"].name
+  lt_allow_access_cidr_blocks  = [module.network.subnet["public-a"].cidr_block, module.network.subnet["public-b"].cidr_block]
+  lt_service_port              = local.infra.lt.service_port
+  lt_instance_type             = local.infra.lt.instance_type
 }
