@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize]
-    paths: ["gallery/infra/**"]
+    paths: ["infra/**"]
 
 permissions:
   contents: read
@@ -14,7 +14,7 @@ permissions:
 env:
   TF_VERSION: "1.14.7"
   AWS_REGION: "ap-northeast-2"
-  WORKING_DIR: "gallery/infra"
+  WORKING_DIR: "infra"
 
 jobs:
   quality-gate:
